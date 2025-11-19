@@ -42,12 +42,13 @@ const Navbar = () => {
 
   return (
     <nav className="bg-white shadow-md px-6 py-3 flex items-center justify-between sticky top-0 z-50">
-      {/* Left: Logo */}
+      <img className="w-10 h-auto" src="/zentroeat.png" alt="Logo" />
+
       <div
         className="text-2xl font-bold text-green-600 cursor-pointer"
         onClick={() => navigate("/")}
       >
-        FoodDelivery
+        ZentroEat
       </div>
 
       {/* Middle: Location + Search */}
