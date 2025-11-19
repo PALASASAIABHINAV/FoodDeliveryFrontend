@@ -2,31 +2,63 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image" href="/zentroeat.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/zentroeat.png" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ZentroEat</title>
 
-    <!-- Google tag (gtag.js) -->
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-Q962BHF5OZ"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <!-- Title -->
+    <title>ZentroEat – Fast Food Delivery App</title>
 
-  gtag('config', 'G-Q962BHF5OZ');
-</script>
+    <!-- Primary SEO Meta Tags -->
+    <meta
+      name="description"
+      content="ZentroEat delivers fresh meals fast from top restaurants. Order food online with quick delivery and live order tracking."
+    />
 
+    <meta
+      name="keywords"
+      content="ZentroEat, food delivery, food app, order food online, fastest food delivery, restaurants near me"
+    />
 
-<meta name="description" content="Order food from the best restaurants. ZentroEat delivers fast, fresh and hot meals to your doorstep." />
+    <meta name="author" content="ZentroEat" />
+    <meta name="robots" content="index, follow" />
 
-<meta name="keywords" content="ZentroEat, food delivery, restaurant delivery, fastest delivery app, order food online" />
+    <!-- Open Graph (for WhatsApp, Facebook, Instagram previews) -->
+    <meta property="og:title" content="ZentroEat – Fastest Food Delivery App" />
+    <meta
+      property="og:description"
+      content="Order tasty food from top restaurants. Fast delivery, best prices, live tracking."
+    />
+    <meta property="og:image" content="/zentroeat.png" />
+    <meta property="og:url" content="https://zentroeat.vercel.app" />
+    <meta property="og:type" content="website" />
 
-<meta name="author" content="ZentroEat" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ZentroEat – Fast Food Delivery" />
+    <meta
+      name="twitter:description"
+      content="Order food online. Fast delivery from the best restaurants."
+    />
+    <meta name="twitter:image" content="/zentroeat.png" />
 
-<meta name="robots" content="index, follow" />
-
+    <!-- Google Analytics (GA4) -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-Q962BHF5OZ"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-Q962BHF5OZ");
+    </script>
   </head>
+
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
