@@ -56,6 +56,7 @@ const DeliveryNavigation = () => {
   const navigate = useNavigate();
   const { user } = useUserStore();
   const { verifyDeliveryOtp } = useOrderStore();
+  useDeliveryStore(); // kept so import isn't "unused" in your project structure
 
   const [assignmentData, setAssignmentData] = useState(null);
   const [myLocation, setMyLocation] = useState(null);
@@ -145,7 +146,7 @@ const DeliveryNavigation = () => {
     return () => navigator.geolocation.clearWatch(watchId);
   }, [customerLocation]);
 
-  // Handle mark as delivered (generate OTP)
+  // Handle mark as delivered (open OTP modal)
   const handleMarkDelivered = () => {
     setShowOtpModal(true);
   };
@@ -198,11 +199,11 @@ const DeliveryNavigation = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
-          <div className="animate-spin w-16 h-16 border-4 border-green-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-lg font-semibold text-gray-700">
-            Loading navigation...
+          <div className="w-14 h-14 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm font-semibold text-slate-700">
+            Loading delivery navigation…
           </p>
         </div>
       </div>
@@ -210,235 +211,335 @@ const DeliveryNavigation = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-4 shadow-lg sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto flex items-center gap-4">
+      <header className="sticky top-0 z-40 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-4 text-white">
           <button
             onClick={() => navigate("/")}
-            className="p-2 hover:bg-white/20 rounded-full transition"
+            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition"
           >
-            <ArrowLeft className="w-6 h-6" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
-            <h1 className="text-xl font-bold">Delivery Navigation</h1>
-            <p className="text-sm text-green-100">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-emerald-100 font-semibold">
+              Delivery navigation
+            </p>
+            <h1 className="text-lg sm:text-xl font-bold">
               Order #{assignmentData.order._id.slice(-8)}
+            </h1>
+            <p className="text-[11px] sm:text-xs text-emerald-50">
+              Follow the route and complete delivery using the customer code
             </p>
           </div>
-        </div>
-      </div>
-
-      {/* Distance Info */}
-      <div className="max-w-7xl mx-auto p-4">
-        <div className="bg-white rounded-xl shadow-md p-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-              <Navigation className="w-6 h-6 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Distance to Customer</p>
-              <p className="text-2xl font-bold text-gray-800">
-                {distance ? `${distance} km` : "Calculating..."}
-              </p>
-            </div>
+          <div className="hidden sm:flex flex-col items-end text-xs">
+            <span className="font-semibold">
+              {assignmentData.order.user?.fullName}
+            </span>
+            <span className="text-emerald-50">
+              {customerLocation?.address || "Customer address"}
+            </span>
           </div>
-          <button
-            onClick={() => {
-              if (customerLocation) {
-                window.open(
-                  `https://www.google.com/maps/dir/?api=1&destination=${customerLocation.lat},${customerLocation.lon}`,
-                  "_blank"
-                );
-              }
-            }}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
-          >
-            <MapPin className="w-4 h-4" />
-            Open in Google Maps
-          </button>
         </div>
-      </div>
+      </header>
 
-      {/* Map */}
-      <div className="max-w-7xl mx-auto p-4">
-        <div
-          className="bg-white rounded-xl shadow-lg overflow-hidden"
-          style={{ height: "500px" }}
-        >
-          {myLocation && customerLocation && (
-            <MapContainer
-              center={[myLocation.lat, myLocation.lon]}
-              zoom={14}
-              style={{ height: "100%", width: "100%" }}
-            >
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
-              />
-
-              <ChangeMapView
-                coords={[
-                  (myLocation.lat + customerLocation.lat) / 2,
-                  (myLocation.lon + customerLocation.lon) / 2,
-                ]}
-              />
-
-              {/* My Location */}
-              <Marker
-                position={[myLocation.lat, myLocation.lon]}
-                icon={deliveryBoyIcon}
-              >
-                <Popup>
-                  <div className="text-center">
-                    <strong className="text-green-600">You are here</strong>
-                    <br />
-                    <span className="text-sm">{user?.fullName}</span>
-                  </div>
-                </Popup>
-              </Marker>
-
-              {/* Customer Location */}
-              <Marker
-                position={[customerLocation.lat, customerLocation.lon]}
-                icon={customerIcon}
-              >
-                <Popup>
-                  <div className="text-center">
-                    <strong className="text-red-600">Customer Location</strong>
-                    <br />
-                    <span className="text-sm">{customerLocation.address}</span>
-                  </div>
-                </Popup>
-              </Marker>
-
-              {/* Route Line */}
-              <Polyline
-                positions={[
-                  [myLocation.lat, myLocation.lon],
-                  [customerLocation.lat, customerLocation.lon],
-                ]}
-                color="green"
-                weight={4}
-                opacity={0.7}
-              />
-            </MapContainer>
-          )}
-        </div>
-      </div>
-
-      {/* Customer Info */}
-      <div className="max-w-7xl mx-auto p-4">
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4">Customer Details</h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-5 space-y-5">
+        {/* Top summary card */}
+        <section className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)] gap-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-emerald-50 flex items-center justify-center">
+                <Navigation className="w-5 h-5 text-emerald-500" />
+              </div>
               <div>
-                <p className="text-sm text-gray-500">Name</p>
-                <p className="font-semibold">
-                  {assignmentData.order.user?.fullName}
+                <p className="text-[11px] uppercase tracking-wide text-slate-400 font-semibold">
+                  Distance to customer
+                </p>
+                <p className="text-xl font-bold text-slate-900">
+                  {distance ? `${distance} km` : "Calculating…"}
+                </p>
+                <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5" />
+                  Keep location ON for accurate tracking
                 </p>
               </div>
-              <a
-                href={`tel:${assignmentData.order.user?.mobile}`}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
-              >
-                <Phone className="w-4 h-4" />
-                Call Customer
-              </a>
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Delivery Address</p>
-              <p className="font-semibold">{customerLocation?.address}</p>
+            <button
+              onClick={() => {
+                if (customerLocation) {
+                  window.open(
+                    `https://www.google.com/maps/dir/?api=1&destination=${customerLocation.lat},${customerLocation.lon}`,
+                    "_blank"
+                  );
+                }
+              }}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition shadow-sm"
+            >
+              <MapPin className="w-4 h-4" />
+              Open in Google Maps
+            </button>
+          </div>
+
+          {/* Small info card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex gap-3">
+            <div className="w-9 h-9 rounded-full bg-amber-50 flex items-center justify-center">
+              <Package className="w-4 h-4 text-amber-500" />
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Payment Method</p>
-              <p className="font-semibold">
-                {assignmentData.order.paymentMethod}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Total Amount</p>
-              <p className="font-bold text-lg text-green-600">
-                ₹{assignmentData.order.totalAmount}
-              </p>
+            <div className="text-xs">
+              <p className="font-semibold text-slate-900">Delivery tips</p>
+              <ul className="mt-1 text-slate-500 space-y-1">
+                <li>• Call the customer if you cannot find the address.</li>
+                <li>• Always verify the 4-digit code before handing over.</li>
+              </ul>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* Order Items */}
-      <div className="max-w-7xl mx-auto p-4 mb-4">
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4">Order Items</h2>
-          <div className="space-y-2">
-            {assignmentData.order.shopOrder
-              ?.filter(
-                (so) =>
-                  so._id.toString() === assignmentData.shopOrderId.toString()
-              )
-              .map((so) =>
-                so.shopOrderItems?.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex justify-between items-center py-2 border-b last:border-b-0"
+        {/* Map + details */}
+        <section className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1.3fr)] gap-5">
+          {/* Map */}
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+              <div>
+                <p className="text-xs font-semibold text-slate-900">
+                  Live route
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  Your location and customer location in real time
+                </p>
+              </div>
+              <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                <div className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  <span>You</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-rose-500" />
+                  <span>Customer</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ height: "420px" }}>
+              {myLocation && customerLocation && (
+                <MapContainer
+                  center={[myLocation.lat, myLocation.lon]}
+                  zoom={14}
+                  style={{ height: "100%", width: "100%" }}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+                  />
+
+                  <ChangeMapView
+                    coords={[
+                      (myLocation.lat + customerLocation.lat) / 2,
+                      (myLocation.lon + customerLocation.lon) / 2,
+                    ]}
+                  />
+
+                  {/* My Location */}
+                  <Marker
+                    position={[myLocation.lat, myLocation.lon]}
+                    icon={deliveryBoyIcon}
                   >
-                    <div>
-                      <p className="font-semibold">{item.item?.name}</p>
-                      <p className="text-sm text-gray-500">
-                        Qty: {item.quantity}
-                      </p>
-                    </div>
-                    <p className="font-medium">₹{item.price * item.quantity}</p>
-                  </div>
-                ))
-              )}
-          </div>
-        </div>
-      </div>
+                    <Popup>
+                      <div className="text-center">
+                        <strong className="text-emerald-600">
+                          You are here
+                        </strong>
+                        <br />
+                        <span className="text-xs">{user?.fullName}</span>
+                      </div>
+                    </Popup>
+                  </Marker>
 
-      {/* Mark as Delivered Button */}
-      <div className="max-w-7xl mx-auto p-4 pb-8">
-        <button
-          onClick={handleMarkDelivered}
-          disabled={otpLoading}
-          className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-xl font-bold text-lg hover:from-green-700 hover:to-green-800 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-        >
-          <CheckCircle className="w-6 h-6" />
-          {otpLoading ? "Opening..." : "Verify Delivery Code"}
-        </button>
-      </div>
+                  {/* Customer Location */}
+                  <Marker
+                    position={[customerLocation.lat, customerLocation.lon]}
+                    icon={customerIcon}
+                  >
+                    <Popup>
+                      <div className="text-center">
+                        <strong className="text-rose-600">
+                          Customer location
+                        </strong>
+                        <br />
+                        <span className="text-xs">
+                          {customerLocation.address}
+                        </span>
+                      </div>
+                    </Popup>
+                  </Marker>
+
+                  {/* Route Line */}
+                  <Polyline
+                    positions={[
+                      [myLocation.lat, myLocation.lon],
+                      [customerLocation.lat, customerLocation.lon],
+                    ]}
+                    color="mediumseagreen"
+                    weight={4}
+                    opacity={0.8}
+                    dashArray="8, 10"
+                  />
+                </MapContainer>
+              )}
+            </div>
+          </div>
+
+          {/* Right column: customer + items + action */}
+          <div className="space-y-4">
+            {/* Customer info */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-xs font-semibold text-slate-900">
+                    Customer details
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Contact and address for this delivery
+                  </p>
+                </div>
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[11px] text-emerald-600">
+                  <Clock className="w-3 h-3" />
+                  Live task
+                </span>
+              </div>
+
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] text-slate-500">Customer</p>
+                    <p className="font-semibold text-slate-900">
+                      {assignmentData.order.user?.fullName}
+                    </p>
+                  </div>
+                  <a
+                    href={`tel:${assignmentData.order.user?.mobile}`}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-emerald-500 text-white text-xs font-semibold hover:bg-emerald-600 transition shadow-sm"
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                    Call customer
+                  </a>
+                </div>
+
+                <div>
+                  <p className="text-[11px] text-slate-500">
+                    Delivery address
+                  </p>
+                  <p className="font-medium text-slate-900">
+                    {customerLocation?.address}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] text-slate-500">
+                      Payment method
+                    </p>
+                    <p className="font-medium text-slate-900">
+                      {assignmentData.order.paymentMethod}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[11px] text-slate-500">Total amount</p>
+                    <p className="text-lg font-bold text-emerald-600">
+                      ₹{assignmentData.order.totalAmount}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Order items */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+              <p className="text-xs font-semibold text-slate-900 mb-2">
+                Order items
+              </p>
+              <div className="space-y-2 text-sm">
+                {assignmentData.order.shopOrder
+                  ?.filter(
+                    (so) =>
+                      so._id.toString() ===
+                      assignmentData.shopOrderId.toString()
+                  )
+                  .map((so) =>
+                    so.shopOrderItems?.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="flex justify-between items-center py-2 border-b border-slate-100 last:border-b-0"
+                      >
+                        <div>
+                          <p className="font-medium text-slate-900">
+                            {item.item?.name}
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            Qty: {item.quantity}
+                          </p>
+                        </div>
+                        <p className="font-semibold text-slate-900">
+                          ₹{item.price * item.quantity}
+                        </p>
+                      </div>
+                    ))
+                  )}
+              </div>
+            </div>
+
+            {/* Mark as delivered */}
+            <div className="pt-1">
+              <button
+                onClick={handleMarkDelivered}
+                disabled={otpLoading}
+                className="w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white py-3.5 rounded-xl font-semibold text-sm hover:brightness-110 transition-all shadow-lg hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <CheckCircle className="w-5 h-5" />
+                {otpLoading ? "Opening…" : "Verify delivery code"}
+              </button>
+            </div>
+          </div>
+        </section>
+      </main>
 
       {/* OTP Verification Modal */}
       {showOtpModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <h2 className="text-2xl font-bold mb-4 text-center">
-              Verify Delivery
+  <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1000] flex items-center justify-center px-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+            <div className="flex items-center justify-center mb-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-emerald-500" />
+              </div>
+            </div>
+            <h2 className="text-xl font-bold mb-1 text-center text-slate-900">
+              Verify delivery code
             </h2>
+            <p className="text-xs text-slate-500 text-center mb-4">
+              Ask the customer for the{" "}
+              <span className="font-semibold">4-digit code</span> shown in their
+              app and enter it below to complete delivery.
+            </p>
 
-            {/* Show OTP to delivery boy */}
-            {/* Instructions – customer tells code to delivery boy */}
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6">
-              <p className="text-sm text-gray-700 text-center">
-                Ask the customer for the{" "}
-                <span className="font-semibold">delivery code</span> shown in
-                their app and enter it below to complete the delivery.
+            <div className="bg-sky-50 border border-sky-100 rounded-xl p-3 mb-4">
+              <p className="text-[11px] text-sky-700 text-center">
+                Do not hand over the order until the customer confirms the
+                correct code.
               </p>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Enter OTP from Customer
+                <label className="block text-xs font-semibold text-slate-700 mb-2">
+                  Enter OTP from customer
                 </label>
                 <input
                   type="text"
                   maxLength="4"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                  placeholder="Enter 4-digit OTP"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-center text-2xl tracking-widest font-bold focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none"
+                  placeholder="____"
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-center text-2xl tracking-[0.4em] font-bold text-slate-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none"
                 />
               </div>
 
@@ -449,22 +550,22 @@ const DeliveryNavigation = () => {
                     setOtp("");
                     setGeneratedOtp(null);
                   }}
-                  className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-100 transition"
+                  className="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleVerifyOtp}
                   disabled={otp.length !== 4 || otpLoading}
-                  className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-3 bg-emerald-500 text-white rounded-xl text-xs font-semibold hover:bg-emerald-600 transition disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {otpLoading ? "Verifying..." : "Verify & Complete"}
+                  {otpLoading ? "Verifying…" : "Verify & complete"}
                 </button>
               </div>
             </div>
 
-            <p className="text-xs text-gray-500 text-center mt-4">
-              Customer must confirm the OTP to complete delivery
+            <p className="text-[10px] text-slate-400 text-center mt-3">
+              This step protects you and the customer from wrong deliveries.
             </p>
           </div>
         </div>

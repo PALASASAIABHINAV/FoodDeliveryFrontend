@@ -1,9 +1,10 @@
+// App.jsx
 import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
-import Home from "./pages/Home"; // <-- make sure you have this or any protected page
+import Home from "./pages/Home";
 import { useUserStore } from "./store/useAuthStore";
 import AddItem from "./components/owenr/AddItem";
 import CreateShop from "./components/owenr/CreateShop";
@@ -22,222 +23,236 @@ import AdminOwnerRequests from "./pages/AdminOwnerRequests";
 import AdminDashboard from "./admin/AdminDashboard";
 import AdminLayout from "./admin/AdminLayout";
 
-// App.jsx
 export const serverUrl =
   import.meta.env.VITE_SERVER_URL || "http://localhost:7272";
 
+// Nice full-screen loader for initial user fetch
+const FullScreenLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-text-slate-100 text-slate-900">
+    <div className="flex flex-col items-center gap-4">
+      <div className="flex items-center gap-3">
+        <img
+          src="/zentroeat-removebg.png"
+          alt="ZentroEat"
+          className="h-12 w-auto drop-shadow-lg"
+        />
+        <span className="text-sm font-semibold tracking-[0.2em] text-emerald-400 uppercase">
+          Loading
+        </span>
+      </div>
+      <div className="relative">
+        <div className="w-12 h-12 rounded-full border-2 border-emerald-400/30 border-t-emerald-400 animate-spin" />
+      </div>
+      <p className="text-xs text-slate-400">
+        Personalizing your ZentroEat experience…
+      </p>
+    </div>
+  </div>
+);
 
 function App() {
-  const { fetchCurrentUser, user, loading } = useUserStore();
+  const { fetchCurrentUser, user, loading, location, initializeLocation, updateUserLocation } =
+    useUserStore();
 
-  const { location, fetchUserLocation, initializeLocation, updateUserLocation  } = useUserStore();
-
+  // 🔄 Live geolocation → backend
   useEffect(() => {
-  const watchId = navigator.geolocation.watchPosition(
-    async (pos) => {
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        updateUserLocation(lat, lon); // keep logic as is
+      },
+      (err) => console.log("Watch error:", err),
+      { enableHighAccuracy: true }
+    );
 
-      updateUserLocation(lat, lon); // 🔥 Real-time DB update
-    },
-    (err) => console.log("Watch error:", err),
-    { enableHighAccuracy: true }
-  );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [updateUserLocation]);
 
-  return () => navigator.geolocation.clearWatch(watchId);
-}, []);
-
-
+  // Initialize (city, detectedLocation etc.)
   useEffect(() => {
     initializeLocation();
   }, [initializeLocation]);
-  console.log(location);
 
   useEffect(() => {
     fetchCurrentUser();
   }, [fetchCurrentUser]);
 
+  console.log("location:", location);
+  console.log("USER:", user);
+
   if (loading) {
-  return <div>Loading user...</div>;
-}
+    // 🔥 Professional full-screen loader
+    return <FullScreenLoader />;
+  }
 
-console.log("USER:", user);
-
-
+  const isLoggedIn = !!user;
+  const isAdmin = user?.role === "admin";
+  const isDeliveryBoy = user?.role === "deliveryBoy";
+  const isOwner = user?.role === "owner";
 
   return (
-    <Routes>
-
-      <Route
-  path="/admin"
-  element={
-    user && user.role === "admin" ? (
-      <AdminLayout />
-    ) : loading ? (
-      <div>Loading...</div>
-    ) : (
-      <Navigate to="/" replace />
-    )
-  }
->
-  <Route index element={<AdminDashboard />} />
-  <Route path="owner-requests" element={<AdminOwnerRequests />} />
-</Route>
-
-
-      {/* Public routes */}
-      <Route
-        path="/signin"
-        element={!user ? <SignIn /> : <Navigate to="/" replace />}
-      />
-      <Route
-        path="/signup"
-        element={!user ? <SignUp /> : <Navigate to="/" replace />}
-      />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-
-      {/* Protected route */}
-      <Route
-        path="/"
-        element={user ? <Home /> : <Navigate to="/signin" replace />}
-      />
-      <Route
-        path="/cart"
-        element={user ? <CartPage /> : <Navigate to="/signin" replace />}
-      />
-      <Route
-        path="/check-out"
-        element={user ? <CheckOut /> : <Navigate to="/signin" replace />}
-      />
-      <Route
-        path="/order-placed"
-        element={user ? <OrderPlaced /> : <Navigate to="/signin" replace />}
-      />
-      <Route
-        path="/orders"
-        element={user ? <MyOrders /> : <Navigate to="/signin" replace />}
-      />
-
-
-      {/* Live Tracking for Users */}
-<Route
-  path="/track-order/:orderId/:shopOrderId"
-  element={user ? <LiveTracking /> : <Navigate to="/signin" replace />}
-/>
-
-{/* Navigation for Delivery Boy */}
-<Route
-  path="/delivery-navigation/:assignmentId"
-  element={
-    user && user.role === "deliveryBoy" ? (
-      <DeliveryNavigation />
-    ) : (
-      <Navigate to="/" replace />
-    )
-  }
-/>  
-     
-     {/* Delivery Boy Earnings */}
-<Route
-  path="/delivery/earnings"
-  element={
-    user && user.role === "deliveryBoy" ? (
-      <DeliveryEarnings />
-    ) : (
-      <Navigate to="/" replace />
-    )
-  }
-/>
-
-{/* Delivery Boy History */}
-<Route
-  path="/delivery/history"
-  element={
-    user && user.role === "deliveryBoy" ? (
-      <DeliveryHistory />
-    ) : (
-      <Navigate to="/" replace />
-    )
-  }
-/>
-
-{/* Delivery Boy Penalties */}
-<Route
-  path="/delivery/penalties"
-  element={
-    user && user.role === "deliveryBoy" ? (
-      <PenaltyHistory />
-    ) : (
-      <Navigate to="/" replace />
-    )
-  }
-/>
-
-
-      {/* Owner routes */}
-      <Route
-        path="/add-item"
-        element={
-          user ? (
-            user.role === "owner" ? (
-              <AddItem />
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <Routes>
+        {/* ADMIN AREA */}
+        <Route
+          path="/admin"
+          element={
+            isAdmin ? (
+              <AdminLayout />
+            ) : loading ? (
+              <FullScreenLoader />
             ) : (
               <Navigate to="/" replace />
             )
-          ) : (
-            <Navigate to="/signin" replace />
-          )
-        }
-      />
-      <Route
-        path="/create-shop"
-        element={
-          user ? (
-            user.role === "owner" ? (
-              <CreateShop />
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="owner-requests" element={<AdminOwnerRequests />} />
+        </Route>
+
+        {/* PUBLIC AUTH ROUTES */}
+        <Route
+          path="/signin"
+          element={!isLoggedIn ? <SignIn /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="/signup"
+          element={!isLoggedIn ? <SignUp /> : <Navigate to="/" replace />}
+        />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+
+        {/* MAIN USER / HOME */}
+        <Route
+          path="/"
+          element={isLoggedIn ? <Home /> : <Navigate to="/signin" replace />}
+        />
+
+        {/* CART + CHECKOUT FLOW */}
+        <Route
+          path="/cart"
+          element={isLoggedIn ? <CartPage /> : <Navigate to="/signin" replace />}
+        />
+        <Route
+          path="/check-out"
+          element={isLoggedIn ? <CheckOut /> : <Navigate to="/signin" replace />}
+        />
+        <Route
+          path="/order-placed"
+          element={
+            isLoggedIn ? <OrderPlaced /> : <Navigate to="/signin" replace />
+          }
+        />
+        <Route
+          path="/orders"
+          element={isLoggedIn ? <MyOrders /> : <Navigate to="/signin" replace />}
+        />
+
+        {/* USER LIVE TRACKING */}
+        <Route
+          path="/track-order/:orderId/:shopOrderId"
+          element={isLoggedIn ? <LiveTracking /> : <Navigate to="/signin" replace />}
+        />
+
+        {/* DELIVERY BOY ROUTES */}
+        <Route
+          path="/delivery-navigation/:assignmentId"
+          element={
+            isLoggedIn && isDeliveryBoy ? (
+              <DeliveryNavigation />
             ) : (
               <Navigate to="/" replace />
             )
-          ) : (
-            <Navigate to="/signin" replace />
-          )
-        }
-      />
-      <Route
-        path="/edit-shop"
-        element={
-          user ? (
-            user.role === "owner" ? (
-              <EditShop />
+          }
+        />
+
+        <Route
+          path="/delivery/earnings"
+          element={
+            isLoggedIn && isDeliveryBoy ? (
+              <DeliveryEarnings />
             ) : (
               <Navigate to="/" replace />
             )
-          ) : (
-            <Navigate to="/signin" replace />
-          )
-        }
-      />
-      <Route
-        path="/edit-item/:itemId"
-        element={
-          user ? (
-            user.role === "owner" ? (
-              <EditItem />
+          }
+        />
+        <Route
+          path="/delivery/history"
+          element={
+            isLoggedIn && isDeliveryBoy ? (
+              <DeliveryHistory />
             ) : (
               <Navigate to="/" replace />
             )
-          ) : (
-            <Navigate to="/signin" replace />
-          )
-        }
-      />
+          }
+        />
+        <Route
+          path="/delivery/penalties"
+          element={
+            isLoggedIn && isDeliveryBoy ? (
+              <PenaltyHistory />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
 
-     
+        {/* OWNER ROUTES */}
+        <Route
+          path="/add-item"
+          element={
+            isLoggedIn ? (
+              isOwner ? <AddItem /> : <Navigate to="/" replace />
+            ) : (
+              <Navigate to="/signin" replace />
+            )
+          }
+        />
+
+       
+
+        <Route
+  path="/create-shop"
+  element={
+    user ? (
+      user.role === "owner" && user.isVerifiedOwner ? (
+        <CreateShop />
+      ) : user.role === "owner" ? (
+        // Owner but not verified → send to waiting page
+        <Navigate to="/" replace />
+      ) : (
+        <Navigate to="/" replace />
+      )
+    ) : (
+      <Navigate to="/signin" replace />
+    )
+  }
+/>
 
 
+        <Route
+          path="/edit-shop"
+          element={
+            isLoggedIn ? (
+              isOwner ? <EditShop /> : <Navigate to="/" replace />
+            ) : (
+              <Navigate to="/signin" replace />
+            )
+          }
+        />
 
-
-    </Routes>
+        <Route
+          path="/edit-item/:itemId"
+          element={
+            isLoggedIn ? (
+              isOwner ? <EditItem /> : <Navigate to="/" replace />
+            ) : (
+              <Navigate to="/signin" replace />
+            )
+          }
+        />
+      </Routes>
+    </div>
   );
 }
 

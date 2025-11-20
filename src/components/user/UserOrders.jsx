@@ -1,24 +1,30 @@
-import { Clock, Navigation } from "lucide-react";
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin } from "lucide-react";
+import {
+  Clock,
+  Navigation,
+  MapPin,
+  Store,
+  IndianRupee,
+  Package,
+} from "lucide-react";
 import { useItemStore } from "../../store/useItemStore";
 import ReviewModal from "../common/ReviewModal";
 
 const STATUS_COLORS = {
-  PENDING: "bg-yellow-100 text-yellow-800",
-  CONFIRMED: "bg-blue-100 text-blue-800",
-  PREPARING: "bg-purple-100 text-purple-800",
-  OUT_FOR_DELIVERY: "bg-indigo-100 text-indigo-800",
-  DELIVERED: "bg-green-100 text-green-800",
-  CANCELLED: "bg-red-100 text-red-800",
+  PENDING: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  CONFIRMED: "bg-blue-50 text-blue-700 border-blue-200",
+  PREPARING: "bg-purple-50 text-purple-700 border-purple-200",
+  OUT_FOR_DELIVERY: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  DELIVERED: "bg-green-50 text-green-700 border-green-200",
+  CANCELLED: "bg-red-50 text-red-700 border-red-200",
 };
 
 const STATUS_LABELS = {
   PENDING: "Pending",
   CONFIRMED: "Confirmed",
   PREPARING: "Preparing",
-  OUT_FOR_DELIVERY: "Out for Delivery",
+  OUT_FOR_DELIVERY: "Out for delivery",
   DELIVERED: "Delivered",
   CANCELLED: "Cancelled",
 };
@@ -26,6 +32,7 @@ const STATUS_LABELS = {
 const UserOrders = ({ orders }) => {
   const navigate = useNavigate();
   const { addReview } = useItemStore();
+
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedItem, setSelectedItem] = React.useState(null);
 
@@ -36,7 +43,6 @@ const UserOrders = ({ orders }) => {
 
   const submitReview = async (rating, comment) => {
     if (!rating) return alert("Please select a rating.");
-
     try {
       await addReview(selectedItem._id, rating, comment);
       alert("Thanks for your review!");
@@ -47,121 +53,171 @@ const UserOrders = ({ orders }) => {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="space-y-5 mt-3">
       {orders.map((order) => (
         <div
           key={order._id}
-          className="border rounded-lg p-4 mb-4 shadow-sm bg-white hover:shadow-md transition"
+          className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition"
         >
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold text-lg">
-              Order #{order._id.slice(-8)}
-            </h3>
-            <span className="text-sm text-gray-600">
-              {new Date(order.createdAt).toLocaleString()}
-            </span>
+          {/* Order header */}
+          <div className="px-5 pt-4 pb-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <p className="text-xs font-semibold text-slate-500 tracking-wide uppercase">
+                Order #{order._id.slice(-8)}
+              </p>
+              <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                {new Date(order.createdAt).toLocaleString()}
+              </p>
+              <p className="text-xs text-slate-600 mt-1">
+                Payment:{" "}
+                <span className="font-semibold text-slate-800">
+                  {order.paymentMethod}
+                </span>
+              </p>
+            </div>
+
+            <div className="text-right">
+              <p className="text-xs text-slate-500">Order total</p>
+              <p className="text-lg font-extrabold text-slate-900 flex items-center justify-end gap-1">
+                <IndianRupee className="w-4 h-4" />
+                {order.totalAmount}
+              </p>
+            </div>
           </div>
 
-          <p className="text-sm text-gray-600 mb-2">
-            Payment: <strong>{order.paymentMethod}</strong> • Total:{" "}
-            <strong>₹{order.totalAmount}</strong>
-          </p>
-
-          <div className="mt-3 space-y-3">
+          {/* Shops in the order */}
+          <div className="px-5 py-4 space-y-4">
             {order.shopOrder?.map((shopOrder) => (
               <div
                 key={shopOrder.shop?._id || Math.random()}
-                className="border-t pt-3"
+                className="rounded-xl bg-slate-50 border border-slate-100 p-3 sm:p-4"
               >
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="font-medium text-blue-600">
-                    {shopOrder.shop?.name || "Shop"}
-                  </h4>
+                {/* Shop row */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
+                  <div className="flex items-center gap-3">
+                    {/* Shop image */}
+                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-200 flex-shrink-0">
+                      <img
+                        src={
+                          shopOrder.shop?.image?.url || "/placeholder-shop.jpg"
+                        }
+                        alt={shopOrder.shop?.name || "Shop"}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900 flex items-center gap-1">
+                        <Store className="w-3.5 h-3.5 text-emerald-500" />
+                        {shopOrder.shop?.name || "Restaurant"}
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        Shop subtotal: ₹{shopOrder.subTotal}
+                      </p>
+                    </div>
+                  </div>
 
-                  {/* Status Badge */}
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      STATUS_COLORS[shopOrder.status] ||
-                      "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {STATUS_LABELS[shopOrder.status] || shopOrder.status}
-                  </span>
-                </div>
+                  {/* Status badge */}
+                  <div className="flex flex-col items-end gap-2">
+                    <span
+                      className={`px-3 py-1 rounded-full text-[11px] font-semibold border ${
+                        STATUS_COLORS[shopOrder.status] ||
+                        "bg-slate-50 text-slate-700 border-slate-200"
+                      }`}
+                    >
+                      {STATUS_LABELS[shopOrder.status] || shopOrder.status}
+                    </span>
 
-                {/* 🎯 ADD THIS — Delivery assignment status messages */}
-                {shopOrder.status === "OUT_FOR_DELIVERY" && (
-                  <div className="mt-2">
-                    {!shopOrder.assignment ? (
-                      <div className="text-sm text-yellow-600 flex items-center gap-2">
-                        <Clock className="w-4 h-4 animate-pulse" />
-                        <span>Searching for a delivery partner...</span>
-                      </div>
-                    ) : (
-                      <div className="text-sm text-blue-600 flex items-center gap-2">
-                        <Navigation className="w-4 h-4" />
-                        <span>Delivery partner is on the way!</span>
+                    {/* Delivery assignment status */}
+                    {shopOrder.status === "OUT_FOR_DELIVERY" && (
+                      <div className="text-xs">
+                        {!shopOrder.assignment ? (
+                          <span className="inline-flex items-center gap-1 text-amber-600">
+                            <Clock className="w-3.5 h-3.5 animate-pulse" />
+                            Searching for a delivery partner…
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-blue-600">
+                            <Navigation className="w-3.5 h-3.5" />
+                            Delivery partner is on the way
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
+                </div>
 
-                {/* 🔐 Delivery Code – show to customer */}
-                {shopOrder.deliveryOtp && shopOrder.status !== "DELIVERED" && (
-                  <div className="mt-3 text-sm text-purple-700 bg-purple-50 border border-purple-200 rounded-lg px-3 py-2">
-                    <p className="font-semibold">
-                      Delivery Code (share with delivery boy):{" "}
-                      <span className="font-mono tracking-widest text-lg">
-                        {shopOrder.deliveryOtp}
-                      </span>
-                    </p>
-                  </div>
-                )}
+                {/* Delivery OTP – show only while not delivered */}
+                {shopOrder.deliveryOtp &&
+                  shopOrder.status !== "DELIVERED" && (
+                    <div className="mt-2 text-xs text-purple-700 bg-purple-50 border border-purple-200 rounded-lg px-3 py-2">
+                      <p className="font-semibold">
+                        Delivery code (share only with the delivery partner):{" "}
+                        <span className="font-mono tracking-[0.25em] text-base">
+                          {shopOrder.deliveryOtp}
+                        </span>
+                      </p>
+                    </div>
+                  )}
 
+                {/* Track order button */}
                 {shopOrder.assignment &&
                   shopOrder.status === "OUT_FOR_DELIVERY" && (
                     <button
                       onClick={() =>
                         navigate(`/track-order/${order._id}/${shopOrder._id}`)
                       }
-                      className="mt-2 w-full bg-blue-600 text-white py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition"
+                      className="mt-3 w-full bg-slate-900 text-white text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-800 transition"
                     >
                       <MapPin className="w-4 h-4" />
-                      Track Order Live
+                      Track order live
                     </button>
                   )}
 
-                <p className="text-sm text-gray-600">
-                  Shop subtotal: ₹{shopOrder.subTotal}
-                </p>
-
-                <div className="mt-2 space-y-1">
+                {/* Items */}
+                <div className="mt-3 grid gap-2">
                   {shopOrder.shopOrderItems?.map((item, idx) => (
                     <div
                       key={item.item?._id || idx}
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-gray-700 bg-gray-50 p-2 rounded"
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white rounded-lg px-2 py-2 shadow-[0_1px_3px_rgba(15,23,42,0.06)]"
                     >
-                      <div>
-                        <div className="font-medium">{item.item?.name}</div>
-                        <div className="text-xs text-gray-500">
-                          Qty: {item.quantity} × ₹{item.price}
+                      <div className="flex items-center gap-3">
+                        {/* Item image */}
+                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
+                          <img
+                            src={
+                              item.item?.image?.url ||
+                              "/placeholder-item.jpg"
+                            }
+                            alt={item.item?.name || "Item"}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-slate-900">
+                            {item.item?.name}
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            Qty {item.quantity} × ₹{item.price}
+                          </p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-3 mt-2 sm:mt-0">
-                        <div className="font-medium">
+                        <div className="text-xs font-semibold text-slate-900">
                           ₹{item.price * item.quantity}
                         </div>
 
-                        {/* ⭐ Review button – only when this shopOrder is delivered */}
-                        {shopOrder.status === "DELIVERED" && item.item?._id && (
-                          <button
-                            onClick={() => openReviewModal(item.item)}
-                            className="text-xs px-3 py-1 rounded bg-yellow-500 text-white hover:bg-yellow-600"
-                          >
-                            Rate this item
-                          </button>
-                        )}
+                        {/* Review button only when delivered */}
+                        {shopOrder.status === "DELIVERED" &&
+                          item.item?._id && (
+                            <button
+                              onClick={() => openReviewModal(item.item)}
+                              className="text-[11px] px-3 py-1.5 rounded-full bg-amber-500 text-white font-semibold hover:bg-amber-600"
+                            >
+                              Rate this item
+                            </button>
+                          )}
                       </div>
                     </div>
                   ))}
@@ -171,14 +227,30 @@ const UserOrders = ({ orders }) => {
           </div>
         </div>
       ))}
-      <ReviewModal
-  isOpen={isModalOpen}
-  onClose={() => setIsModalOpen(false)}
-  onSubmit={submitReview}
-  item={selectedItem}
-/>
 
+      {/* If there are literally no orders, show a friendly empty state here too */}
+      {!orders.length && (
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+            <Package className="w-8 h-8 text-slate-400" />
+          </div>
+          <p className="text-base font-semibold text-slate-800">
+            You haven&apos;t ordered anything yet
+          </p>
+          <p className="text-xs text-slate-500 mt-1">
+            Explore restaurants and add something tasty to your cart.
+          </p>
+        </div>
+      )}
+
+      <ReviewModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={submitReview}
+        item={selectedItem}
+      />
     </div>
   );
 };
+
 export default UserOrders;

@@ -1,8 +1,11 @@
 import { create } from "zustand";
 import axios from "axios";
+import { persist } from "zustand/middleware"; 
 import { serverUrl } from "../App";
 
-export const useUserStore = create((set, get) => ({
+export const useUserStore = create(
+  persist(
+    (set, get) => ({
   user: null,
   loading: false,
   error: null,
@@ -241,4 +244,9 @@ export const useUserStore = create((set, get) => ({
 }
 
 
-}));
+ }),
+    {
+      name: "zentroeat-auth", // 👈 key in localStorage
+    }
+  )
+);

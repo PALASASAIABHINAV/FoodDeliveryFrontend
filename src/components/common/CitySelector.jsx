@@ -17,12 +17,12 @@ const CitySelector = () => {
   const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
+
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
   const debounceTimer = useRef(null);
 
-  // Close dropdown when clicking outside
+  // 🔒 close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -36,7 +36,7 @@ const CitySelector = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Search cities using GeoDB API
+  // 🌍 search cities (GeoDB)
   const searchCities = async (query) => {
     if (!query || query.length < 2) {
       setCities([]);
@@ -55,7 +55,7 @@ const CitySelector = () => {
             limit: 10,
             offset: 0,
             types: "CITY",
-            sort: "-population", // Sort by population (largest first)
+            sort: "-population",
             languageCode: "en",
           },
           headers: {
@@ -72,30 +72,28 @@ const CitySelector = () => {
       }
     } catch (err) {
       console.error("Error searching cities:", err);
-      setError("Failed to search cities. Please try again.");
+      setError("Unable to search right now. Please try again.");
       setCities([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Debounced search
+  // ⏱ debounced input
   const handleSearchChange = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
 
-    // Clear previous timer
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
 
-    // Set new timer (1 second delay to respect rate limit)
     debounceTimer.current = setTimeout(() => {
       searchCities(query);
-    }, 1000); // 1 second delay for rate limiting
+    }, 1000);
   };
 
-  // Select a city
+  // ✅ select city
   const handleCitySelect = (city) => {
     const cityName = city.city || city.name;
     setSelectedCity(cityName);
@@ -104,7 +102,7 @@ const CitySelector = () => {
     setCities([]);
   };
 
-  // Use current location
+  // 🧭 use detected location
   const handleUseCurrentLocation = () => {
     resetToDetectedLocation();
     setIsOpen(false);
@@ -112,133 +110,162 @@ const CitySelector = () => {
     setCities([]);
   };
 
-  // Open dropdown and focus input
+  // open dropdown + focus
   const handleOpen = () => {
     setIsOpen(true);
-    setTimeout(() => inputRef.current?.focus(), 100);
+    setTimeout(() => inputRef.current?.focus(), 80);
   };
 
-  const displayCity = selectedCity || "Select City";
-  const isDetectedCity = !isManualSelection && detectedLocation?.city === selectedCity;
+  const displayCity = selectedCity || "Choose city";
+  const isDetectedCity =
+    !isManualSelection && detectedLocation?.city === selectedCity;
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* City Display Button */}
+      {/* Trigger pill – matches ZentroEat navbar style */}
       <button
+        type="button"
         onClick={handleOpen}
-        className="flex items-center gap-2 bg-white border-2 border-gray-200 hover:border-blue-400 px-4 py-2.5 rounded-lg transition-all duration-200 min-w-[200px] group"
+        className="flex items-center gap-2 rounded-full bg-white/95 border border-emerald-100 px-4 py-2.5 shadow-sm hover:shadow-md hover:border-emerald-400 transition-all duration-200 min-w-[230px] group"
       >
-        <MapPin className="w-5 h-5 text-blue-600 group-hover:scale-110 transition-transform" />
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 group-hover:bg-emerald-100 transition">
+          <MapPin className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
+        </span>
         <div className="flex-1 text-left">
-          <p className="text-xs text-gray-500">Deliver to</p>
-          <p className="font-semibold text-gray-800 truncate">{displayCity}</p>
+          <p className="text-[10px] font-semibold tracking-wide text-slate-400 uppercase">
+            Deliver to
+          </p>
+          <p className="text-sm font-semibold text-slate-900 truncate">
+            {displayCity}
+          </p>
         </div>
         {isDetectedCity && (
-          <Navigation className="w-4 h-4 text-green-500" title="Current Location" />
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-600">
+            <Navigation className="w-3 h-3" />
+            Live
+          </span>
         )}
       </button>
 
-      {/* Dropdown */}
+      {/* Dropdown panel */}
       {isOpen && (
-        <div className="absolute top-full mt-2 left-0 w-[400px] bg-white border-2 border-gray-200 rounded-xl shadow-2xl z-50 overflow-hidden">
-          {/* Search Input */}
-          <div className="p-4 border-b">
-            <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg">
-              <Search className="w-5 h-5 text-gray-400" />
+        <div className="absolute top-full mt-2 left-0 w-[420px] max-w-[95vw] rounded-2xl border border-emerald-100 bg-white/95 shadow-2xl backdrop-blur-sm z-50 overflow-hidden">
+          {/* Header search */}
+          <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-cyan-50">
+            <p className="text-[11px] font-semibold text-emerald-700 mb-2">
+              Where should we deliver?
+            </p>
+            <div className="flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-2 shadow-inner">
+              <Search className="w-4 h-4 text-slate-400" />
               <input
                 ref={inputRef}
                 type="text"
                 value={searchQuery}
                 onChange={handleSearchChange}
-                placeholder="Search for city..."
-                className="flex-1 bg-transparent outline-none text-gray-700"
+                placeholder="Search for a city…"
+                className="flex-1 bg-transparent outline-none text-sm text-slate-800 placeholder-slate-400"
               />
               {searchQuery && (
                 <button
+                  type="button"
                   onClick={() => {
                     setSearchQuery("");
                     setCities([]);
                   }}
-                  className="p-1 hover:bg-gray-200 rounded"
+                  className="p-1 rounded-full hover:bg-slate-100"
                 >
-                  <X className="w-4 h-4 text-gray-500" />
+                  <X className="w-4 h-4 text-slate-400" />
                 </button>
               )}
             </div>
           </div>
 
-          {/* Current Location Option */}
+          {/* Current location chip */}
           {detectedLocation?.city && (
-            <div className="border-b">
+            <div className="border-b border-slate-100">
               <button
+                type="button"
                 onClick={handleUseCurrentLocation}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-emerald-50/60 transition-colors text-left"
               >
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Navigation className="w-5 h-5 text-blue-600" />
+                <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                  <Navigation className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-800">Use Current Location</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm font-semibold text-slate-900">
+                    Use current location
+                  </p>
+                  <p className="text-[11px] text-slate-500">
                     {detectedLocation.city}, {detectedLocation.state}
                   </p>
                 </div>
+                <span className="text-[10px] text-emerald-500 font-medium">
+                  Recommended
+                </span>
               </button>
             </div>
           )}
 
-          {/* Search Results */}
-          <div className="max-h-[300px] overflow-y-auto">
+          {/* Results list */}
+          <div className="max-h-[320px] overflow-y-auto bg-white">
             {loading && (
-              <div className="p-4 text-center text-gray-500">
-                <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2"></div>
-                <p className="text-sm">Searching cities...</p>
+              <div className="p-4 text-center text-slate-500">
+                <div className="mx-auto mb-2 h-6 w-6 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+                <p className="text-xs">Searching cities…</p>
               </div>
             )}
 
-            {error && (
-              <div className="p-4 text-center text-red-500">
-                <p className="text-sm">{error}</p>
+            {error && !loading && (
+              <div className="p-4 text-center text-red-500 text-xs">
+                {error}
               </div>
             )}
 
             {!loading && !error && cities.length === 0 && searchQuery.length >= 2 && (
-              <div className="p-4 text-center text-gray-500">
-                <p className="text-sm">No cities found. Try different keywords.</p>
+              <div className="p-4 text-center text-slate-400 text-xs">
+                No cities found. Try a different spelling.
               </div>
             )}
 
             {!loading && cities.length > 0 && (
-              <div>
+              <div className="divide-y divide-slate-100">
                 {cities.map((city) => (
                   <button
+                    type="button"
                     key={city.id}
                     onClick={() => handleCitySelect(city)}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-b last:border-b-0"
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left"
                   >
-                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <MapPin className="w-5 h-5 text-gray-600" />
+                    <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+                      <MapPin className="w-4 h-4 text-slate-600" />
                     </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-800">{city.city || city.name}</p>
-                      <p className="text-sm text-gray-500">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 truncate">
+                        {city.city || city.name}
+                      </p>
+                      <p className="text-[11px] text-slate-500 truncate">
                         {city.region && `${city.region}, `}
                         {city.country}
                       </p>
                     </div>
-                    <p className="text-xs text-gray-400">
-                      {city.population ? `${(city.population / 1000000).toFixed(1)}M` : ""}
-                    </p>
+                    {city.population && (
+                      <p className="text-[10px] text-slate-400 font-medium">
+                        {(city.population / 1000000).toFixed(1)}M
+                      </p>
+                    )}
                   </button>
                 ))}
               </div>
             )}
 
-            {/* Hint for better results */}
-            {!searchQuery && (
-              <div className="p-4 text-center text-gray-400">
-                <p className="text-sm">Type city name to search</p>
-                <p className="text-xs mt-1">Example: Mumbai, Delhi, Bangalore</p>
+            {!searchQuery && !loading && (
+              <div className="p-4 text-center text-slate-400">
+                <p className="text-xs">
+                  Start typing to search popular cities like{" "}
+                  <span className="font-semibold text-slate-500">
+                    Mumbai, Delhi, Bangalore…
+                  </span>
+                </p>
               </div>
             )}
           </div>

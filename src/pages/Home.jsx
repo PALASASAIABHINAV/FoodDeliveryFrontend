@@ -4,6 +4,7 @@ import OwnerDashboard from '../components/owenr/OwnerDashboard';
 import UserDashboard from '../components/user/UserDashboard';
 import DeliveryBoyDashboard from '../components/deliveryBoy/DeliveryBoyDashboard';
 import AdminLayout from '../admin/AdminLayout';
+import Footer from '../components/common/Footer';
 
 const Home = () => {
     const {user, loading} = useUserStore();
@@ -11,12 +12,15 @@ const Home = () => {
     if(loading) return <p>Loading...</p>;
     
     return (
+        <>
         <div>
             {user.role === "owner" && <OwnerDashboard/>}
             {user.role === "user" && <UserDashboard/>}
             {user.role === "deliveryBoy" && <DeliveryBoyDashboard/>}
             {user.role === "admin" && <AdminLayout/>}
         </div>
+        <Footer/>
+        </>
     )
 }
 

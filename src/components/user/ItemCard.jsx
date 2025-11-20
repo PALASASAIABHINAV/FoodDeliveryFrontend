@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { Star, ShoppingCart } from "lucide-react";
 import { useCartStore } from "../../store/useCartStore";
-import {  useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 
 const ItemCard = ({ item }) => {
   if (!item) return null;
+
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
-  const { addToCart, loading, openCart } = useCartStore();
+  const { addToCart, loading } = useCartStore();
 
   const avgRating = item.rating?.average || 0;
   const ratingCount = item.rating?.count || 0;
@@ -30,14 +31,13 @@ const ItemCard = ({ item }) => {
   };
 
   const increaseQuantity = () => setQuantity((prev) => prev + 1);
-  const decreaseQuantity = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+  const decreaseQuantity = () =>
+    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
 
-  // ✅ Handle add to cart
   const handleAddToCart = async () => {
     try {
       await addToCart(item._id, quantity);
-     // Open cart sidebar after adding
-      setQuantity(1); // Reset quantity
+      setQuantity(1);
       navigate("/cart");
     } catch (error) {
       alert("Failed to add to cart");
@@ -45,83 +45,120 @@ const ItemCard = ({ item }) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all overflow-hidden">
-      {/* Image */}
-      <div className="relative h-48 w-full overflow-hidden">
+    <div className="
+      bg-white rounded-2xl shadow-lg hover:shadow-2xl 
+      transition-all duration-300 overflow-hidden
+      border border-gray-200 hover:border-emerald-400
+    ">
+      {/* IMAGE */}
+      <div className="relative h-48 w-full overflow-hidden group">
         <img
           src={item.image?.url || "/images/placeholder-food.jpg"}
           alt={item.name}
-          className="h-full w-full object-cover hover:scale-105 transition-transform"
+          className="
+            h-full w-full object-cover 
+            group-hover:scale-110 transition-transform duration-500
+          "
         />
-        <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white text-sm font-semibold px-2 py-1 rounded">
+
+        {/* PRICE TAG */}
+        <div className="
+          absolute bottom-3 left-3 
+          bg-black/70 backdrop-blur-md 
+          text-white text-sm font-semibold 
+          px-3 py-1 rounded-full shadow-md
+        ">
           ₹{item.price}
+        </div>
+
+        {/* FOOD TYPE TAG */}
+        <div className="
+          absolute top-3 right-3 
+          px-2 py-1 rounded-full text-xs font-semibold 
+          shadow-md 
+          text-white
+          backdrop-blur-md
+          bg-opacity-80
+          ${item.foodType === 'Veg' ? 'bg-green-600' : 'bg-red-600'}
+        ">
+          {item.foodType}
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-4">
-        <h3 className="font-bold text-lg truncate">{item.name}</h3>
+      {/* CONTENT */}
+      <div className="p-4 space-y-2">
+        {/* NAME */}
+        <h3 className="font-bold text-lg text-gray-900 truncate">
+          {item.name}
+        </h3>
 
-        {/* Food Type */}
-        <div className="flex items-center space-x-2 mt-1">
-          <span
-            className={`inline-block w-3 h-3 rounded-full ${
-              item.foodType === "Veg" ? "bg-green-600" : "bg-red-600"
-            }`}
-          ></span>
-          <p className="text-sm text-gray-500">{item.foodType}</p>
-        </div>
+        {/* CATEGORY */}
+        <p className="text-sm text-gray-500">{item.category}</p>
 
-        {/* Category */}
-        <p className="text-gray-600 text-sm mt-1">{item.category}</p>
-
-        {/* Description */}
+        {/* DESCRIPTION */}
         {item.description && (
-          <p className="text-gray-500 text-sm mt-2 line-clamp-2">
+          <p className="text-sm text-gray-600 line-clamp-2">
             {item.description}
           </p>
         )}
 
-        {/* Rating Section */}
-        <div className="flex items-center mt-3 space-x-2">
-          {renderStars()}
+        {/* RATING */}
+        <div className="flex items-center mt-2 gap-2">
+          <div className="flex">{renderStars()}</div>
           <span className="text-sm text-gray-700 font-medium">
             {avgRating.toFixed(1)} ({ratingCount})
           </span>
         </div>
 
-        {/* Quantity Selector + Add to Cart */}
-        <div className="flex items-center mt-4 space-x-3">
-          <div className="flex items-center border rounded-lg overflow-hidden">
+        {/* QUANTITY + ADD */}
+        <div className="flex items-center justify-between mt-3">
+          {/* QUANTITY */}
+          <div className="flex items-center border rounded-xl overflow-hidden">
             <button
               onClick={decreaseQuantity}
-              className="px-3 py-1 bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition"
+              className="
+                px-3 py-1 bg-gray-100 text-gray-700 
+                hover:bg-gray-200 font-bold transition
+              "
             >
               -
             </button>
-            <span className="px-4">{quantity}</span>
+
+            <span className="px-4 font-semibold">{quantity}</span>
+
             <button
               onClick={increaseQuantity}
-              className="px-3 py-1 bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition"
+              className="
+                px-3 py-1 bg-gray-100 text-gray-700 
+                hover:bg-gray-200 font-bold transition
+              "
             >
               +
             </button>
           </div>
+
+          {/* ADD TO CART */}
           <button
             onClick={handleAddToCart}
             disabled={loading}
-            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="
+              flex items-center gap-2 
+              bg-emerald-600 hover:bg-emerald-700 
+              text-white px-4 py-2 rounded-xl 
+              shadow-md hover:shadow-lg 
+              transition disabled:opacity-50
+            "
           >
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            {loading ? "Adding..." : "Add to Cart"}
+            <ShoppingCart className="w-4 h-4" />
+            {loading ? "Adding..." : "Add"}
           </button>
         </div>
 
-        {/* Shop Name */}
+        {/* SHOP NAME */}
         {item.shop && (
-          <p className="mt-3 text-sm text-gray-700 font-medium">
+          <p className="mt-3 text-sm font-medium text-gray-700">
             From:{" "}
-            <span className="text-black font-semibold">
+            <span className="font-semibold text-gray-900">
               {item.shop.name || "Unknown Shop"}
             </span>
           </p>
